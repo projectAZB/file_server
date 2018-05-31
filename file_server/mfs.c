@@ -23,16 +23,15 @@ int _file_image_fd;
 data_block_table_t * _data_block_table;
 inode_table_t _inode_table;
 
-void init_reg_inode(inode_t * inode, int inum, int parent, int self, char * name, size_t size, size_t offset)
+void init_reg_inode(inode_t * inode, int inum, int parent, int self, char * name)
 {
 	inode->inum = inum;
-	inode->size = size;
+	inode->size = 0;
 	inode->parentSelfDirs[0] = parent;
 	inode->parentSelfDirs[1] = self;
 	strncpy(inode->name, name, strlen(name) + 1);
 	inode->file_type = MFS_REGULAR_FILE;
-	inode->reg_num_blocks = 0;
-	inode->reg_block_offset = offset;
+	inode->reg_block_offset = -1;
 	inode->dir_num_inodes = 0; //set 0 to start
 	memset(inode->dir_child_inums, -1, 50); //-1 all entries
 }
@@ -47,8 +46,7 @@ void init_dir_inode(inode_t * inode, int inum, int parent, int self, char * name
 	inode->file_type = MFS_DIRECTORY;
 	inode->dir_num_inodes = 0; //set 0 to start
 	memset(inode->dir_child_inums, -1, 50); //-1 all entries
-	inode->reg_num_blocks = 0;
-	inode->reg_block_offset = 0;
+	inode->reg_block_offset = -1;
 }
 
 int MFS_Init(char * hostname, int port)
@@ -176,7 +174,7 @@ int MFS_Creat(int pinum, int type, char * name)
 		}
 		else { //type == MFS_REG_FILE
 			inode_t reg_inode;
-			init_reg_inode(&reg_inode, _inode_table.next_free, pinum, _inode_table.next_free, name, 0, 0);
+			init_reg_inode(&reg_inode, _inode_table.next_free, pinum, _inode_table.next_free, name);
 			_inode_table.inode_bitmap[_inode_table.next_free] = 1;
 			_inode_table.inodes[_inode_table.next_free] = reg_inode;
 			_inode_table.next_free++;
@@ -203,6 +201,49 @@ int MFS_Creat(int pinum, int type, char * name)
 
 int MFS_Write(int inum, char * buffer, int block)
 {
+	if (sizeof(buffer) > MFS_BLOCK_SIZE || block > 9 || block < 0 || inum < 0 || inum >= _inode_table.next_free) {
+		return -1;
+	}
 	
+	//get the inode
+	inode_t inode_to_write = _inode_table.inodes[inum];
+	if (inode_to_write.file_type == MFS_DIRECTORY) {
+		return -1;
+	}
+	
+	if (inode_to_write.reg_block_offset == -1) { //doesn't have data yet, allocate
+		inode_to_write.reg_block_offset = _data_block_table->next_free;
+		_data_block_table->next_free = _data_block_table->next_free + 10; //add ten to get the next free 10 block
+	}
+	
+	//copy the data from buffer to the datablock at the inode start + offset
+	int total_data_offset = inode_to_write.reg_block_offset + block;
+	memcpy(_data_block_table->blocks[total_data_offset].bytes, buffer, MFS_BLOCK_SIZE);
+	
+	//make sure to add the node back into the table so it can be updated
+	_inode_table.inodes[inum] = inode_to_write;
+	
+	//offset to the beginnign to write the node table
+	if (lseek(_file_image_fd, 0, SEEK_SET) == -1) {
+		perror("Error offsetting to inode table");
+		return -1;
+	}
+	if (write(_file_image_fd, &_inode_table, sizeof(inode_table_t)) == -1) {
+		perror("Error writing inode table to disk");
+		return -1;
+	}
+	
+	//offset to after the inode table to write the data table
+	if (lseek(_file_image_fd, sizeof(inode_table_t), SEEK_SET) == -1) {
+		perror("Error offsetting to data table");
+		return -1;
+	}
+	if (write(_file_image_fd, _data_block_table, sizeof(data_block_table_t)) == -1) {
+		perror("Error writing image table to file");
+		return -1;
+	}
+	
+	fsync(_file_image_fd);
+	return 0;
 }
 
