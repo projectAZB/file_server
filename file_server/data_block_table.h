@@ -14,10 +14,16 @@
 
 typedef struct data_block_table_t data_block_table_t;
 
-struct data_block_table_t {
+struct data_block_table_t
+{
 	unsigned int next_free;
 	int data_block_bitmap[NUM_BLOCKS];
 	data_block_t blocks[NUM_BLOCKS]; //will be 4096
 };
+
+void print_data_block_table(data_block_table_t data_block_table)
+{
+	printf("next free: %u\n", data_block_table.next_free);
+}
 
 #endif 
