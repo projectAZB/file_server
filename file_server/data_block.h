@@ -17,9 +17,4 @@ typedef struct data_block_t {
 	byte bytes[MFS_BLOCK_SIZE];
 } data_block_t;
 
-typedef data_block_t * data_block_handle;
-
-data_block_handle create_data_block(void);
-void destroy_data_block(data_block_handle data_block);
-
 #endif
