@@ -149,6 +149,16 @@ int MFS_Lookup(int pinum, char * name)
 	return ret;
 }
 
+int MFS_Stat(int inum, MFS_Stat_t * m)
+{
+	if (inum < 0 || inum >= _inode_table.next_free) {
+		return -1;
+	}
+	
+	inode_t inode = _inode_table.inodes[inum];
+	return 0;
+}
+
 int MFS_Creat(int pinum, int type, char * name)
 {
 	if (pinum >= _inode_table.next_free || pinum < 0) {
