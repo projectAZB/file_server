@@ -14,15 +14,10 @@
 
 typedef struct data_block_table_t data_block_table_t;
 
-typedef data_block_table_t * data_block_table_handle;
-
 struct data_block_table_t {
-	unsigned int first_free;
+	unsigned int next_free;
 	int data_block_bitmap[NUM_BLOCKS];
-	data_block_handle blocks[NUM_BLOCKS]; //will be 4096
+	data_block_t blocks[NUM_BLOCKS]; //will be 4096
 };
-
-data_block_table_handle create_data_block_table(void);
-void destroy_data_block_table(data_block_table_handle data_block_table);
 
 #endif 
