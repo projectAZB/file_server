@@ -11,10 +11,8 @@
 
 #include "constants.h"
 
-typedef unsigned char byte;
-
 typedef struct data_block_t {
-	byte bytes[MFS_BLOCK_SIZE];
+	char bytes[MFS_BLOCK_SIZE];
 } data_block_t;
 
 #endif
