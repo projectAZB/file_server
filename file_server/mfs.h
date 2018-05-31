@@ -13,6 +13,18 @@
 
 #include "constants.h"
 
+typedef struct __MFS_Stat_t {
+	file_t type;   // MFS_DIRECTORY or MFS_REGULAR
+	size_t size;   // bytes
+	int blocks; // number of blocks allocated to file
+	// note: no permissions, access times, etc.
+} MFS_Stat_t;
+
+typedef struct __MFS_DirEnt_t {
+	int  inum;      // inode number of entry (-1 means entry not used)
+	char name[252]; // up to 252 bytes of name in directory (including \0)
+} MFS_DirEnt_t;
+
 //!!!before returning a success code, the file system should always fsync() the image!!!
 
 //takes a host name and port number and uses those to find the server exporting the file system.
@@ -26,7 +38,7 @@ int MFS_Lookup(int pinum, char * name);
 
 //returns some information about the file specified by inum. Upon success, return 0, otherwise -1. The
 //exact info returned is defined by MFS_Stat_t. Failure modes: inum does not exist.
-int MFS_Stat(int inum, MFS_Stat_handle m);
+int MFS_Stat(int inum, MFS_Stat_t * m);
 
 //writes a block of size 4096 bytes at the block offset specified by block . Returns 0 on success, -1 on
 //failure. Failure modes: invalid inum, invalid block, not a regular file (you can't write to directories).
