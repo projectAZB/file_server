@@ -216,9 +216,10 @@ int MFS_Write(int inum, char * buffer, int block)
 		_data_block_table->next_free = _data_block_table->next_free + 10; //add ten to get the next free 10 block
 	}
 	
-	//copy the data from buffer to the datablock at the inode start + offset
+	//copy the data from buffer to the datablock at the inode start + offset, fill in bitmap
 	int total_data_offset = inode_to_write.reg_block_offset + block;
 	memcpy(_data_block_table->blocks[total_data_offset].bytes, buffer, MFS_BLOCK_SIZE);
+	_data_block_table->data_block_bitmap[total_data_offset] = 1;
 	
 	//make sure to add the node back into the table so it can be updated
 	_inode_table.inodes[inum] = inode_to_write;
