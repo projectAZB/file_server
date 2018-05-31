@@ -11,7 +11,8 @@
 
 typedef struct inode_t inode_t;
 
-struct inode_t {
+struct inode_t
+{
 	int parentSelfDirs[2];
 	int inum;
 	char name[252];
