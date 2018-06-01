@@ -16,7 +16,7 @@ struct inode_t
 	int parentSelfDirs[2];
 	int inum;
 	char name[252];
-	file_t file_type;
+	int file_type;
 	size_t size;
 	//for directories
 	size_t dir_num_inodes;
