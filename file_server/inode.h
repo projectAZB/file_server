@@ -22,11 +22,12 @@ struct inode_t
 	size_t dir_num_inodes;
 	int dir_child_inums[50];
 	//for regular files
+	size_t reg_num_blocks;
 	int reg_block_offset;
 };
 
 void print_inode(inode_t inode) {
-	printf(" inum: %d\n name: %s\n file type: %d\n size: %lu\n num_inodes: %lu\n block_offset: %d\n", inode.inum, inode.name, inode.file_type, inode.size, inode.dir_num_inodes, inode.reg_block_offset);
+	printf(" inum: %d\n name: %s\n file type: %d\n size: %lu\n num_inodes: %lu\n num_blocks: %lu block_offset: %d\n", inode.inum, inode.name, inode.file_type, inode.size, inode.dir_num_inodes, inode.reg_num_blocks, inode.reg_block_offset);
 }
 
 #endif 
