@@ -166,9 +166,6 @@ int MFS_Stat(int inum, MFS_Stat_t * m)
 	}
 	
 	inode_t inode = _inode_table.inodes[inum];
-	if (inode.inum == -1) {
-		return -1;
-	}
 	if (inode.file_type == MFS_DIRECTORY) {
 		m->blocks = 1;
 		int num_nodes = inode.dir_num_inodes + 2;
@@ -191,9 +188,6 @@ int MFS_Creat(int pinum, int type, char * name)
 	
 	int lookup_inum = MFS_Lookup(pinum, name);
 	inode_t parent_inode = _inode_table.inodes[pinum];
-	if (parent_inode.inum == -1) {
-		return -1;
-	}
 	if (parent_inode.file_type == MFS_REGULAR_FILE) { //can't add children to a regular file
 		return -1;
 	}
@@ -244,9 +238,6 @@ int MFS_Write(int inum, char * buffer, int block)
 	
 	//get the inode
 	inode_t inode_to_write = _inode_table.inodes[inum];
-	if (inode_to_write.inum == -1) {
-		return -1;
-	}
 	if (inode_to_write.file_type == MFS_DIRECTORY) {
 		return -1;
 	}
@@ -305,9 +296,6 @@ int MFS_Read(int inum, char * buffer, int block)
 		return -1;
 	}
 	inode_t inode = _inode_table.inodes[inum];
-	if (inode.inum == -1) {
-		return -1;
-	}
 	if (inode.file_type == MFS_DIRECTORY) {
 		MFS_DirEnt_t dir;
 		dir.inum = inode.inum;
@@ -348,9 +336,23 @@ int MFS_Unlink(int pinum, char *name)
 		inode_t child = _inode_table.inodes[inode.dir_child_inums[i]];
 		if (strcmp(child.name, name) == 0) { // name matches
 			_inode_table.inode_bitmap[child.inum] = -1;
-			
+			inode.dir_child_inums[i] = -1;
+			_inode_table.inodes[inode.dir_child_inums[i]] = inode;
 		}
 	}
+	
+	//go to beginning of file for write
+	if (lseek(_file_image_fd, 0, SEEK_SET) == -1) {
+		perror("Error going to file start");
+		return -1;
+	}
+	
+	if (write(_file_image_fd, &_inode_table, sizeof(inode_table_t)) == -1) {
+		perror("Error writing the inode table");
+		return -1;
+	}
+	
+	fsync(_file_image_fd);
 	
 	return 0;
 }
