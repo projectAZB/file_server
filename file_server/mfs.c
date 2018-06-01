@@ -85,6 +85,8 @@ int MFS_Init(char * hostname, int port)
 			return -1;
 		}
 		
+		fsync(_file_image_fd);
+		
 		return 0;
 	}
 	else {
@@ -236,7 +238,7 @@ int MFS_Write(int inum, char * buffer, int block)
 	
 	if (inode_to_write.reg_block_offset == -1) { //doesn't have data yet, allocate
 		inode_to_write.reg_block_offset = _data_block_table->next_free;
-		_data_block_table->next_free = _data_block_table->next_free + 10; //add ten to get the next free 10 block
+		_data_block_table->next_free = _data_block_table->next_free + BLOCKS_PER_FILE; //add ten to get the next free 10 block
 	}
 	
 	//copy the data from buffer to the datablock at the inode start + offset, fill in bitmap
@@ -247,7 +249,7 @@ int MFS_Write(int inum, char * buffer, int block)
 	int block_count = 0;
 	//calculate the blocks that are allocated for this file and put it in the inode
 	//has to be done this way in case of an overwrite
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < BLOCKS_PER_FILE; i++)
 	{
 		if (_data_block_table->data_block_bitmap[total_data_offset + i] == 1) {
 			block_count++;
@@ -282,3 +284,30 @@ int MFS_Write(int inum, char * buffer, int block)
 	return 0;
 }
 
+int MFS_Read(int inum, char * buffer, int block)
+{
+	if (block > 9 || block < 0 || inum < 0 || inum >= _inode_table.next_free) {
+		return -1;
+	}
+	inode_t inode = _inode_table.inodes[inum];
+	if (inode.file_type == MFS_DIRECTORY) {
+		MFS_DirEnt_t dir;
+		dir.inum = inode.inum;
+		memcpy(dir.name, inode.name, strlen(inode.name) + 1);
+		memcpy(buffer, &dir, sizeof(dir));
+		return 0;
+	}
+	else { //inode.file_type == MFS_REGULAR_FILE
+		if (inode.reg_block_offset == -1) { //no data allocated, invalid block
+			return -1;
+		}
+		data_block_t data_block = _data_block_table->blocks[inode.reg_block_offset + block];
+		memcpy(buffer, &data_block, sizeof(data_block_t));
+		return 0;
+	}
+}
+
+int MFS_Unlink(int pinum, char *name)
+{
+	return -1;
+}
