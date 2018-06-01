@@ -31,6 +31,7 @@ void init_reg_inode(inode_t * inode, int inum, int parent, int self, char * name
 	inode->parentSelfDirs[1] = self;
 	strncpy(inode->name, name, strlen(name) + 1);
 	inode->file_type = MFS_REGULAR_FILE;
+	inode->reg_num_blocks = 0;
 	inode->reg_block_offset = -1;
 	inode->dir_num_inodes = 0; //set 0 to start
 	memset(inode->dir_child_inums, -1, 50); //-1 all entries
@@ -47,6 +48,7 @@ void init_dir_inode(inode_t * inode, int inum, int parent, int self, char * name
 	inode->dir_num_inodes = 0; //set 0 to start
 	memset(inode->dir_child_inums, -1, 50); //-1 all entries
 	inode->reg_block_offset = -1;
+	inode->reg_num_blocks = 0;
 }
 
 int MFS_Init(char * hostname, int port)
@@ -156,6 +158,15 @@ int MFS_Stat(int inum, MFS_Stat_t * m)
 	}
 	
 	inode_t inode = _inode_table.inodes[inum];
+	if (inode.file_type == MFS_DIRECTORY) {
+		m->blocks = 1;
+		int num_nodes = inode.dir_num_inodes + 2;
+		m->size = num_nodes * sizeof(MFS_DirEnt_t);
+		m->type = MFS_DIRECTORY;
+	}
+	else { // inode.file_type == MFS_REGULAR_FILE
+		
+	}
 	return 0;
 }
 
@@ -230,6 +241,16 @@ int MFS_Write(int inum, char * buffer, int block)
 	int total_data_offset = inode_to_write.reg_block_offset + block;
 	memcpy(_data_block_table->blocks[total_data_offset].bytes, buffer, MFS_BLOCK_SIZE);
 	_data_block_table->data_block_bitmap[total_data_offset] = 1;
+	
+	int block_count = 0;
+	//calculate the blocks that are allocated for this file and put it in the inode
+	for (int i = 0; i < 10; i++)
+	{
+		if (_data_block_table->data_block_bitmap[total_data_offset + i] == 1) {
+			block_count++;
+		}
+	}
+	inode_to_write.reg_num_blocks = block_count;
 	
 	//make sure to add the node back into the table so it can be updated
 	_inode_table.inodes[inum] = inode_to_write;
