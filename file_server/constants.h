@@ -11,16 +11,8 @@
 
 #include <stdio.h>
 
-#define MFS_BLOCK_SIZE (int)4096
-
+#define BLOCKS_PER_FILE (int)10
 #define NUM_INODES (int)4096
 #define NUM_BLOCKS (int)4096
-
-#define CLIENT_TIMEOUT (int)5
-
-typedef enum file_t {
-	MFS_DIRECTORY = 0,
-	MFS_REGULAR_FILE = 1
-} file_t;
 
 #endif
