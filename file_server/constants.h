@@ -14,5 +14,6 @@
 #define BLOCKS_PER_FILE (int)10
 #define NUM_INODES (int)4096
 #define NUM_BLOCKS (int)4096
+#define MAX_INODES (int)100
 
 #endif

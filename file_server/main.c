@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "mfs.h"
 
@@ -38,6 +39,20 @@ int main(int argc, char * argv[])
 	printf("Port Number: %ld, File System Image: %s\n", port_number, file_system_image);
 	
 	int mfs_ret = MFS_Init(file_system_image, port_number);
+	int swag = MFS_Creat(0, MFS_REGULAR_FILE, "swag.txt");
+	int mfs_lookup = MFS_Lookup(0, "swag.txt");
+	int soup = MFS_Creat(0, MFS_DIRECTORY, "soup");
+	int soup_lookup = MFS_Lookup(0, "soup");
+	assert(soup_lookup == 2);
+	assert(mfs_lookup == 1);
+	
+	char block1[MFS_BLOCK_SIZE];
+	memset(block1, 99, MFS_BLOCK_SIZE);
+	int wb = MFS_Write(mfs_lookup, block1, 2);
+	
+	char buff[MFS_BLOCK_SIZE];
+	int rb = MFS_Read(mfs_lookup, buff, 2);
+	printf(buff);
 	
 	return 0;
 }

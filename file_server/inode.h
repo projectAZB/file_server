@@ -20,7 +20,7 @@ struct inode_t
 	size_t size;
 	//for directories
 	size_t dir_num_inodes;
-	int dir_child_inums[50];
+	int dir_child_inums[MAX_INODES];
 	//for regular files
 	size_t reg_num_blocks;
 	int reg_block_offset;

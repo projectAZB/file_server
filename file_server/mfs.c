@@ -117,6 +117,9 @@ int r_search(inode_t inode, int pinum, char * name)
 			{
 				int child_inum = inode.dir_child_inums[i];
 				inode_t child_inode = _inode_table.inodes[child_inum];
+				if (child_inode.inum == -1) {
+					continue;
+				}
 				if (strncmp(child_inode.name, name, strlen(name)) == 0) { //correct filename
 					return child_inode.inum;
 				}
@@ -129,6 +132,9 @@ int r_search(inode_t inode, int pinum, char * name)
 		{
 			int child_inum = inode.dir_child_inums[i];
 			inode_t child_inode = _inode_table.inodes[child_inum];
+			if (child_inode.inum == -1) {
+				continue;
+			}
 			if (child_inode.file_type == MFS_DIRECTORY) { //if directory, recursively search
 				return r_search(child_inode, pinum, name);
 			}
@@ -160,6 +166,9 @@ int MFS_Stat(int inum, MFS_Stat_t * m)
 	}
 	
 	inode_t inode = _inode_table.inodes[inum];
+	if (inode.inum == -1) {
+		return -1;
+	}
 	if (inode.file_type == MFS_DIRECTORY) {
 		m->blocks = 1;
 		int num_nodes = inode.dir_num_inodes + 2;
@@ -182,6 +191,9 @@ int MFS_Creat(int pinum, int type, char * name)
 	
 	int lookup_inum = MFS_Lookup(pinum, name);
 	inode_t parent_inode = _inode_table.inodes[pinum];
+	if (parent_inode.inum == -1) {
+		return -1;
+	}
 	if (parent_inode.file_type == MFS_REGULAR_FILE) { //can't add children to a regular file
 		return -1;
 	}
@@ -232,6 +244,9 @@ int MFS_Write(int inum, char * buffer, int block)
 	
 	//get the inode
 	inode_t inode_to_write = _inode_table.inodes[inum];
+	if (inode_to_write.inum == -1) {
+		return -1;
+	}
 	if (inode_to_write.file_type == MFS_DIRECTORY) {
 		return -1;
 	}
@@ -290,6 +305,9 @@ int MFS_Read(int inum, char * buffer, int block)
 		return -1;
 	}
 	inode_t inode = _inode_table.inodes[inum];
+	if (inode.inum == -1) {
+		return -1;
+	}
 	if (inode.file_type == MFS_DIRECTORY) {
 		MFS_DirEnt_t dir;
 		dir.inum = inode.inum;
@@ -309,5 +327,30 @@ int MFS_Read(int inum, char * buffer, int block)
 
 int MFS_Unlink(int pinum, char *name)
 {
-	return -1;
+	if (pinum < 0 || pinum >= _data_block_table->next_free) {
+		return -1;
+	}
+	
+	inode_t inode = _inode_table.inodes[pinum];
+	
+	if (inode.file_type == MFS_REGULAR_FILE) { // has to be a directory
+		return -1;
+	}
+	
+	//inode is a directory
+	if (inode.dir_num_inodes > 0) { //dir isn't empty, error
+		return -1;
+	}
+	
+	// there are no children
+	for (int i = 0; i < MAX_INODES; i++)
+	{
+		inode_t child = _inode_table.inodes[inode.dir_child_inums[i]];
+		if (strcmp(child.name, name) == 0) { // name matches
+			_inode_table.inode_bitmap[child.inum] = -1;
+			
+		}
+	}
+	
+	return 0;
 }
