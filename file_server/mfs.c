@@ -165,7 +165,9 @@ int MFS_Stat(int inum, MFS_Stat_t * m)
 		m->type = MFS_DIRECTORY;
 	}
 	else { // inode.file_type == MFS_REGULAR_FILE
-		
+		m->blocks = inode.reg_num_blocks;
+		m->size = MFS_BLOCK_SIZE * inode.reg_num_blocks;
+		m->type = MFS_REGULAR_FILE;
 	}
 	return 0;
 }
@@ -244,6 +246,7 @@ int MFS_Write(int inum, char * buffer, int block)
 	
 	int block_count = 0;
 	//calculate the blocks that are allocated for this file and put it in the inode
+	//has to be done this way in case of an overwrite
 	for (int i = 0; i < 10; i++)
 	{
 		if (_data_block_table->data_block_bitmap[total_data_offset + i] == 1) {
