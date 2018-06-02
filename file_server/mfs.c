@@ -338,7 +338,7 @@ int MFS_Read(int inum, char * buffer, int block)
 		MFS_DirEnt_t dir;
 		dir.inum = inode.inum;
 		memcpy(dir.name, inode.name, strlen(inode.name) + 1);
-		memcpy(buffer, &dir, sizeof(dir));
+		memcpy(buffer, &dir, sizeof(MFS_DirEnt_t));
 		return 0;
 	}
 	else { //inode.file_type == MFS_REGULAR_FILE
