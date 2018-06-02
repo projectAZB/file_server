@@ -65,10 +65,25 @@ UDP_Write(int fd, struct sockaddr_in *addr, char *buffer, int n)
 int
 UDP_Read(int fd, struct sockaddr_in *addr, char *buffer, int n)
 {
-    int len = sizeof(struct sockaddr_in); 
-    int rc = recvfrom(fd, buffer, n, 0, (struct sockaddr *) addr, (socklen_t *) &len);
-    // assert(len == sizeof(struct sockaddr_in)); 
-    return rc;
+    int len = sizeof(struct sockaddr_in);
+	
+	fd_set set;
+	struct timeval timeout;
+	
+	FD_ZERO(&set); /* clear the set */
+	FD_SET(fd, &set); /* add our file descriptor to the set */
+	
+	timeout.tv_sec = 5;
+	
+	int rc = select(fd + 1, &set, NULL, NULL, &timeout);
+	
+	if (rc == 0 || rc == -1) {
+		return -1;
+	}
+	else {
+		int ret = recvfrom(fd, buffer, n, 0, (struct sockaddr *) addr, (socklen_t *) &len);
+		return ret;
+	}
 }
 
 
