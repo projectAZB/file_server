@@ -345,6 +345,9 @@ int MFS_Read(int inum, char * buffer, int block)
 		if (inode.reg_block_offset == -1) { //no data allocated, invalid block
 			return -1;
 		}
+		if (block >= inode.reg_num_blocks) {
+			return -1;
+		}
 		data_block_t data_block = _data_block_table->blocks[inode.reg_block_offset + block];
 		memcpy(buffer, &data_block, sizeof(data_block_t));
 		return 0;
