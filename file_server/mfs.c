@@ -214,43 +214,50 @@ int MFS_Creat(int pinum, int type, char * name)
 	if (parent_inode.file_type == MFS_REGULAR_FILE) { //can't add children to a regular file
 		return -1;
 	}
-	if (_inode_table.inode_bitmap[pinum] == 0) { //file doesn't exist, create it
-		parent_inode.dir_child_inums[parent_inode.dir_num_inodes] = _inode_table.next_free;
-		(parent_inode.dir_num_inodes)++;
-		_inode_table.inodes[parent_inode.inum] = parent_inode;
-		if (type == MFS_DIRECTORY) {
-			inode_t dir_inode;
-			init_dir_inode(&dir_inode, _inode_table.next_free, pinum, _inode_table.next_free, name);
-			_inode_table.inode_bitmap[_inode_table.next_free] = 1;
-			_inode_table.inodes[_inode_table.next_free] = dir_inode;
-			(_inode_table.next_free)++;
-			
+	for (int i = 0; i < parent_inode.dir_num_inodes; i++) {
+		int child_inum = parent_inode.dir_child_inums[i];
+		if (_inode_table.inode_bitmap[child_inum] <= 0) {
+			continue;
 		}
-		else { //type == MFS_REG_FILE
-			inode_t reg_inode;
-			init_reg_inode(&reg_inode, _inode_table.next_free, pinum, _inode_table.next_free, name);
-			_inode_table.inode_bitmap[_inode_table.next_free] = 1;
-			_inode_table.inodes[_inode_table.next_free] = reg_inode;
-			(_inode_table.next_free)++;
+		inode_t child = _inode_table.inodes[child_inum];
+		if (strcmp(child.name, name) == 0) { //file exists, return 0
+			return 0;
 		}
-		
-		//go to beginning of file, where the inode table is stored
-		if (lseek(_file_image_fd, 0, SEEK_SET) == -1) {
-			perror("Error seeking to beginning of file");
-			return -1;
-		}
-		if (write(_file_image_fd, &_inode_table, sizeof(inode_table_t)) == -1) {
-			perror("Error creating file");
-			return -1;
-		}
-		
-		fsync(_file_image_fd);
-		
-		return 0;
 	}
-	else { //file does exist, return a success _inode_table.inode_bitmap[pinum] == 1
-		return 0;
+	
+	//doesn't exist, create
+	parent_inode.dir_child_inums[parent_inode.dir_num_inodes] = _inode_table.next_free;
+	(parent_inode.dir_num_inodes)++;
+	_inode_table.inodes[parent_inode.inum] = parent_inode;
+	if (type == MFS_DIRECTORY) {
+		inode_t dir_inode;
+		init_dir_inode(&dir_inode, _inode_table.next_free, pinum, _inode_table.next_free, name);
+		_inode_table.inode_bitmap[_inode_table.next_free] = 1;
+		_inode_table.inodes[_inode_table.next_free] = dir_inode;
+		(_inode_table.next_free)++;
+		
 	}
+	else { //type == MFS_REG_FILE
+		inode_t reg_inode;
+		init_reg_inode(&reg_inode, _inode_table.next_free, pinum, _inode_table.next_free, name);
+		_inode_table.inode_bitmap[_inode_table.next_free] = 1;
+		_inode_table.inodes[_inode_table.next_free] = reg_inode;
+		(_inode_table.next_free)++;
+	}
+	
+	//go to beginning of file, where the inode table is stored
+	if (lseek(_file_image_fd, 0, SEEK_SET) == -1) {
+		perror("Error seeking to beginning of file");
+		return -1;
+	}
+	if (write(_file_image_fd, &_inode_table, sizeof(inode_table_t)) == -1) {
+		perror("Error creating file");
+		return -1;
+	}
+	
+	fsync(_file_image_fd);
+	
+	return 0;
 }
 
 int MFS_Write(int inum, char * buffer, int block)
@@ -283,7 +290,7 @@ int MFS_Write(int inum, char * buffer, int block)
 	//has to be done this way in case of an overwrite
 	for (int i = 0; i < BLOCKS_PER_FILE; i++)
 	{
-		if (_data_block_table->data_block_bitmap[total_data_offset + i] == 1) {
+		if (_data_block_table->data_block_bitmap[inode_to_write.reg_block_offset + i] == 1) {
 			block_count++;
 		}
 	}
