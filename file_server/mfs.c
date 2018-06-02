@@ -337,6 +337,9 @@ int MFS_Read(int inum, char * buffer, int block)
 	if (inode.file_type == MFS_DIRECTORY) {
 		MFS_DirEnt_t dir;
 		dir.inum = inode.inum;
+		if (block > 0) {
+			return -1;
+		}
 		memcpy(dir.name, inode.name, strlen(inode.name) + 1);
 		memcpy(buffer, &dir, sizeof(MFS_DirEnt_t));
 		return 0;
@@ -356,7 +359,7 @@ int MFS_Read(int inum, char * buffer, int block)
 
 int MFS_Unlink(int pinum, char *name)
 {
-	if (pinum < 0 || pinum >= _data_block_table->next_free) {
+	if (pinum < 0 || pinum >= _inode_table.next_free) {
 		return -1;
 	}
 	
@@ -375,8 +378,11 @@ int MFS_Unlink(int pinum, char *name)
 	}
 	
 	// there are no children
-	for (int i = 0; i < MAX_INODES; i++)
+	for (int i = 0; i < inode.dir_num_inodes; i++)
 	{
+		if (inode.dir_child_inums[i] <= 0) {
+			continue;
+		}
 		inode_t child = _inode_table.inodes[inode.dir_child_inums[i]];
 		if (strcmp(child.name, name) == 0) { // name matches
 			_inode_table.inode_bitmap[child.inum] = -1; //remove the inode from the inode bitmap
