@@ -10,49 +10,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #include "mfs.h"
 
 int main(int argc, char * argv[])
 {
-	/*
-	if (argc != 3) {
-		fprintf(stderr, "Incorrect number of arguments passed. Only specify port number and file system image\n");
-		exit(EXIT_FAILURE);
-	}
+	MFS_Init("localhost", 10003);
 	
-	// exactly 3 arguments (default one plus port number and file system image)
-	char * port_num_string = argv[1];
-	char * ptr;
-	long port_number = strtol(port_num_string, &ptr, 10);
-	if (port_number == 0) {
-		fprintf(stderr, "Incorrect port number format. Must be a positive integer.\n");
-		exit(EXIT_FAILURE);
-	}
+	// /dir1
+	int rc;
 	
-	char * file_system_image = argv[2];
-	 */
-	
-	long port_number = 8080;
-	char file_system_image[] = "taco";
-	
-	printf("Port Number: %ld, File System Image: %s\n", port_number, file_system_image);
-	
-	int mfs_ret = MFS_Init(file_system_image, port_number);
-	int swag = MFS_Creat(0, MFS_REGULAR_FILE, "swag.txt");
-	int mfs_lookup = MFS_Lookup(0, "swag.txt");
-	int soup = MFS_Creat(0, MFS_DIRECTORY, "soup");
-	int soup_lookup = MFS_Lookup(0, "soup");
-	assert(soup_lookup == 2);
-	assert(mfs_lookup == 1);
-	
-	char block1[MFS_BLOCK_SIZE];
-	memset(block1, 99, MFS_BLOCK_SIZE);
-	int wb = MFS_Write(mfs_lookup, block1, 2);
-	
-	char buff[MFS_BLOCK_SIZE];
-	int rb = MFS_Read(mfs_lookup, buff, 2);
-	printf(buff);
+	rc = MFS_Unlink(0, "dir1");
+	if (rc == -1) assert(false);
 	
 	return 0;
 }
